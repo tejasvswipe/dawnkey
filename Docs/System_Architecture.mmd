@@ -1,0 +1,37 @@
+flowchart LR
+  subgraph POWER[Two-AA power path]
+    AA[2 x AA cells in series] --> SW[Inline SPST switch]
+    SW --> J3[J3 pin 1 BAT_RAW]
+    J3 --> U4[U4 TPS61023 boost]
+    U4 --> B5[BOOST_5V]
+    B5 -->|anode to cathode| D13[D13 SS14]
+    D13 --> X5[XIAO 5V input]
+    X5 --> U1[XIAO ESP32-C3 with onboard regulator]
+    U1 --> V3[3V3 rail]
+    AA --> GND[Common GND]
+    GND --> J3G[J3 pin 2]
+  end
+
+  V3 --> U2[U2 MCP23017, 0x20]
+  V3 --> U3[U3 DS3231, 0x68]
+  V3 --> TFT[ST7789 TFT]
+  V3 --> BZ[Piezo buzzer]
+
+  U1 -->|D0-D5 SPI/control| TFT
+  U1 -->|D6 SCL / D7 SDA| BUS[I2C bus]
+  BUS --> U2
+  BUS --> U3
+  BUS --> J2[J2 expansion: 3V3, GND, SDA, SCL]
+  GND --> J2
+  U2 -->|GPA0-GPA3 columns; GPA4-GPA6 rows| KEYS[4 x 3 MX keypad + 12 diodes]
+  U1 -->|D10| R1[R1 1k]
+  R1 --> Q1[Q1 low-side driver]
+  Q1 --> BZ
+  U3 -. VBAT tied to GND .-> GND
+
+  classDef power fill:#d7f7ff,stroke:#00a9c7,stroke-width:2px,color:#101820
+  classDef logic fill:#e9e1ff,stroke:#7556cc,stroke-width:2px,color:#101820
+  classDef load fill:#fff0db,stroke:#ee9224,stroke-width:2px,color:#101820
+  class AA,SW,J3,U4,B5,D13,X5,REG,V3,GND,J3G power
+  class U1,U2,U3,BUS,J2 logic
+  class TFT,BZ,KEYS,R1,Q1 load
