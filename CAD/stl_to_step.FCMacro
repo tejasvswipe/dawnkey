@@ -1,0 +1,37 @@
+# FreeCAD command-line macro: turn each OpenSCAD STL into a faceted Part shape,
+# then export individual STEP files and a positioned case-parts assembly.
+import os, sys
+import FreeCAD as App
+import Part
+import Mesh
+
+HERE=os.path.dirname(os.path.abspath(__file__))
+STL=os.path.join(HERE,'STL')
+STEP=os.path.join(HERE,'STEP')
+os.makedirs(STEP,exist_ok=True)
+PARTS=['base','top','bezel','battery_pod','battery_door','accents','text','key_labels']
+doc=App.newDocument('DAWNKEY_Case')
+objects=[]
+for name in PARTS:
+    fn=os.path.join(STL,name+'.stl')
+    if not os.path.exists(fn):
+        print('Missing STL:',fn)
+        continue
+    mesh=Mesh.Mesh(fn)
+    shape=Part.Shape()
+    shape.makeShapeFromMesh(mesh.Topology,0.05)
+    obj=doc.addObject('Part::Feature',name)
+    obj.Shape=shape
+    objects.append(obj)
+    one=os.path.join(STEP,name+'.step')
+    Part.export([obj],one)
+    print(name,'facets',len(mesh.Facets),'faces',len(shape.Faces),'valid',shape.isValid(),'->',one)
+
+doc.recompute()
+assembly=os.path.join(STEP,'DAWNKEY_Case_Assembly.step')
+if objects:
+    Part.export(objects,assembly)
+    print('Assembly STEP:',assembly,'parts',len(objects))
+else:
+    print('No STL parts found; assembly not exported')
+App.closeDocument(doc.Name)
